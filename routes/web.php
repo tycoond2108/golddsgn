@@ -18,6 +18,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 Route::get('/', function () {
 
+    return view('welcome');
+
+});
+
+
+Route::get('/token', function () {
+
     return response()->json(['csrf-token'=>csrf_token()]);
 
 });
