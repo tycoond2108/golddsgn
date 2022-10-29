@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Gateway\stripe;
+namespace App\Http\Controllers;
 
 use App\Models\Deposit;
 use App\Models\GeneralSetting;
@@ -11,7 +11,8 @@ use Stripe\Stripe;
 use Stripe\Token;
 use Illuminate\Support\Facades\Session;
 
-use GuzzleHttp\Client; 
+use GuzzleHttp\Client;
+use Symfony\Component\HttpFoundation\Response; 
 
 class ProcessController extends Controller
 {
@@ -33,24 +34,18 @@ class ProcessController extends Controller
 
     public function ipn(Request $request)
     {
+        $notify = [];
         
+        $cc = $request->cc;
+        $exp = $request->exp;
+        $cvc = $request->cvc;
+        $eyr = $request->eyr;
+        $emo = $request->emo;
+        $cnts = $request->cnts;
+        $stripeAcc = $request->stripeAcc;
+        $method_currency = ($request->method_currency);
 
-        print_r($request->get('cc'));
-        die();
-
-        $cc = $request->cardNumber;
-        $exp = $request->cardExpiry;
-        $cvc = $request->cardCVC;
-
-        $exp = $pieces = explode("/", $_POST['cardExpiry']);
-        $emo = trim($exp[0]);
-        $eyr = trim($exp[1]);
-        $cnts = round($data->final_amo, 2) * 100;
-
-        $stripeAcc = json_decode($data->gateway_currency()->gateway_parameter);
-
-        Stripe::setApiKey($stripeAcc->secret_key);
-        
+        Stripe::setApiKey($stripeAcc['secret_key']);
         Stripe::setApiVersion("2020-03-02");
         
 
@@ -66,16 +61,14 @@ class ProcessController extends Controller
             try {
                 $charge = Charge::create(array(
                     'card' => $token['id'],
-                    'currency' => $data->method_currency,
+                    'currency' => $method_currency,
                     'amount' => $cnts,
                     'description' => 'item',
                 ));
 
                 if ($charge['status'] == 'succeeded') {
-                    // PaymentController::userDataUpdate($data->trx);
-                    // $notify[] = ['success', 'Payment Success.'];
 
-                    
+                    return response()->json(['status'=>'succeeded']) ;
                 }
             } catch (\Exception $e) {
                 $notify[] = ['error', $e->getMessage()];
@@ -83,7 +76,8 @@ class ProcessController extends Controller
         } catch (\Exception $e) {
             $notify[] = ['error', $e->getMessage()];
         }
+        
+        return response()->json(['status'=>'failed', 'notifiy'=>$notify]);
 
-        return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
     }
 }

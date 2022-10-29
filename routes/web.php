@@ -14,18 +14,19 @@ use Symfony\Component\HttpFoundation\Response;
 |
 */
 
+
+
 Route::get('/', function () {
 
     return response()->json(['csrf-token'=>csrf_token()]);
 
 });
-Route::post('/deposit', 'App\Http\Contollers\Stripe\ProcessController@ipn');
 
+use App\Http\Controllers\ProcessController;
 
+Route::controller(ProcessController::class)->group(function(){
 
+    Route::post('/deposit', 'ipn');
 
+});
 
-
-// Route::get('/', function () {
-//     return view('welcome');
-// });
